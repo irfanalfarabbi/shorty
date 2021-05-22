@@ -6,11 +6,12 @@ import (
 
   "irfanalfarabbi/shorty/logger"
   "irfanalfarabbi/shorty/service"
+
+  "github.com/julienschmidt/httprouter"
 )
 
 const (
-  API_METHOD              = http.MethodPost
-  API_URL                 = "/shorten"
+  SHORTEN_API_URL         = "/shorten"
   SHORTEN_URL_MEMOIZATION = false
 )
 
@@ -23,34 +24,29 @@ type shortenResponse struct {
   Shortcode string `json:"shortcode"`
 }
 
-func Shorten(w http.ResponseWriter, r *http.Request) {
+func Shorten(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
   var statusCode = http.StatusCreated
   var request shortenRequest
   var response shortenResponse
 
-  if r.Method != API_METHOD {
-    returnNotFound(w, API_METHOD, API_URL)
-    return
-  }
-
   err := json.NewDecoder(r.Body).Decode(&request)
   if err != nil {
     statusCode = http.StatusInternalServerError
-    logger.Request(API_METHOD, API_URL, statusCode, err)
+    logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, err)
     w.WriteHeader(statusCode)
     return
   }
 
   if !service.IsValidURL(request.URL) {
     statusCode = http.StatusBadRequest
-    logger.Request(API_METHOD, API_URL, statusCode, nil)
+    logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, nil)
     w.WriteHeader(statusCode)
     return
   }
 
   if SHORTEN_URL_MEMOIZATION {
     if response.Shortcode = service.GetRegisteredURL(request.URL); response.Shortcode != "" {
-      logger.Request(API_METHOD, API_URL, statusCode, response)
+      logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, response)
       w.Header().Set("Content-Type", "application/json")
       w.WriteHeader(statusCode)
       json.NewEncoder(w).Encode(response)
@@ -61,14 +57,14 @@ func Shorten(w http.ResponseWriter, r *http.Request) {
   if len(request.Shortcode) > 0 {
     if !service.IsValidShortcode(request.Shortcode) {
       statusCode = http.StatusUnprocessableEntity
-      logger.Request(API_METHOD, API_URL, statusCode, nil)
+      logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, nil)
       w.WriteHeader(statusCode)
       return
     }
 
     if service.IsShortenURLExists(request.Shortcode) {
       statusCode = http.StatusConflict
-      logger.Request(API_METHOD, API_URL, statusCode, nil)
+      logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, nil)
       w.WriteHeader(statusCode)
       return
     }
@@ -78,7 +74,7 @@ func Shorten(w http.ResponseWriter, r *http.Request) {
 
   if err := service.CreateShortenURL(request.Shortcode, request.URL); err != nil {
     statusCode = http.StatusInternalServerError
-    logger.Request(API_METHOD, API_URL, statusCode, err)
+    logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, err)
     w.WriteHeader(statusCode)
     return
   }
@@ -89,7 +85,7 @@ func Shorten(w http.ResponseWriter, r *http.Request) {
 
   response.Shortcode = request.Shortcode
 
-  logger.Request(API_METHOD, API_URL, statusCode, response)
+  logger.Request(http.MethodPost, SHORTEN_API_URL, statusCode, response)
   w.Header().Set("Content-Type", "application/json")
   w.WriteHeader(statusCode)
   json.NewEncoder(w).Encode(response)

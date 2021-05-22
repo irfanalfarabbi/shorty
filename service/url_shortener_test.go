@@ -34,6 +34,42 @@ func TestCreateShortenURL(t *testing.T) {
 	}
 }
 
+func TestGetShortenURL(t *testing.T) {
+	type args struct {
+		shortcode string
+		count     bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want *ShortenURL
+	}{
+		{"SuccessCount", args{"100001", false}, &ShortenURL{RedirectCount: 0}},
+		{"SuccessCount", args{"100002", false}, &ShortenURL{RedirectCount: 0}},
+		{"SuccessCount", args{"100003", false}, &ShortenURL{RedirectCount: 0}},
+		{"SuccessNoCount", args{"100001", true}, &ShortenURL{RedirectCount: 1}},
+		{"SuccessNoCount", args{"100002", true}, &ShortenURL{RedirectCount: 1}},
+		{"SuccessNoCount", args{"100003", true}, &ShortenURL{RedirectCount: 1}},
+		{"FailedCount", args{"1", true}, nil},
+		{"FailedCount", args{"2", true}, nil},
+		{"FailedCount", args{"3", true}, nil},
+		{"FailedNoCount", args{"1", false}, nil},
+		{"FailedNoCount", args{"2", false}, nil},
+		{"FailedNoCount", args{"3", false}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetShortenURL(tt.args.shortcode, tt.args.count)
+			if tt.want != nil {
+				assert.NotNil(t, got)
+				assert.Equal(t, got.RedirectCount, tt.want.RedirectCount)
+			} else {
+				assert.Nil(t, got)
+			}
+		})
+	}
+}
+
 func TestIsShortenURLExists(t *testing.T) {
 	type args struct {
 		shortcode string

@@ -4,13 +4,16 @@ import (
   "net/http"
   "net/http/httptest"
   "testing"
+
+  "github.com/julienschmidt/httprouter"
+  "github.com/stretchr/testify/assert"
 )
 
 func Test_healthz(t *testing.T) {
   tests := []struct {
-    name     string
-    status   int
-    expected string
+    name         string
+    wantCode     int
+    wantResponse string
   }{
     {"success", http.StatusOK, "OK"},
   }
@@ -22,17 +25,12 @@ func Test_healthz(t *testing.T) {
       }
 
       rr := httptest.NewRecorder()
-      handler := http.HandlerFunc(healthz)
+      router := httprouter.New()
+      router.GET("/healthz", healthz)
+      router.ServeHTTP(rr, req)
 
-      handler.ServeHTTP(rr, req)
-
-      if status := rr.Code; status != tt.status {
-        t.Errorf("handler returned wrong status code: got %v want %v", status, tt.status)
-      }
-
-      if rr.Body.String() != tt.expected {
-        t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), tt.expected)
-      }
+      assert.Equal(t, tt.wantCode, rr.Code)
+      assert.Equal(t, tt.wantResponse, rr.Body.String())
     })
   }
 }

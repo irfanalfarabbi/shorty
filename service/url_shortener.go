@@ -16,11 +16,11 @@ const (
 
 var (
   generateIndex  = 1
-  shortenedUrls  = make(map[string]shortenURL)
+  shortenedUrls  = make(map[string]ShortenURL)
   registeredUrls = make(map[string]string)
 )
 
-type shortenURL struct {
+type ShortenURL struct {
   URL           string
   StartDate     time.Time
   LastSeenDate  time.Time
@@ -36,11 +36,25 @@ func CreateShortenURL(shortcode string, url string) error {
     return fmt.Errorf("short code '%s' already used", shortcode)
   }
 
-  shortenedUrls[shortcode] = shortenURL{
+  shortenedUrls[shortcode] = ShortenURL{
     URL:       url,
     StartDate: time.Now(),
   }
 
+  return nil
+}
+
+func GetShortenURL(shortcode string, count bool) *ShortenURL {
+  shortenURL, ok := shortenedUrls[shortcode]
+  if ok {
+    if count {
+      shortenURL.RedirectCount++
+      shortenURL.LastSeenDate = time.Now()
+      shortenedUrls[shortcode] = shortenURL
+    }
+
+    return &shortenURL
+  }
   return nil
 }
 

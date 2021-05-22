@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,15 +33,15 @@ func TestShorten(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := bytes.NewBuffer([]byte(tt.request))
-			req, err := http.NewRequest(http.MethodPost, "/shorten", request)
+			req, err := http.NewRequest(http.MethodPost, "/api/shorten", request)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(Shorten)
-
-			handler.ServeHTTP(rr, req)
+			router := httprouter.New()
+			router.POST("/api/shorten", Shorten)
+			router.ServeHTTP(rr, req)
 
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Equal(t, tt.wantResponse, rr.Body.String())
